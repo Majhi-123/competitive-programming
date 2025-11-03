@@ -109,12 +109,13 @@ int main(){
     map<int,int> mp;
     long long num = 0;
     for(int i=0;i<n;i++){
-        if(mp[sum[i] - maxi]>0){
+       
+        if(sum[i] - maxi>=0 && mp[sum[i] - maxi]>0){
             num += mp[sum[i] - maxi];
             //length = max(length, i - mp[sum[i] - maxi]);
         }
-        if(mp[p-(maxi - sum[i])]>0){
-            //length = max(length,i - mp[p-(maxi - sum[i])] );
+      
+        else{
             num += mp[p-(maxi - sum[i])];
         }
      
