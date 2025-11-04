@@ -119,36 +119,76 @@
 // 10 
 // 5
  // Write your code here
+// Write your code here
+// Write your code here
+
 #include <bits/stdc++.h>
 using namespace std;
-#define int long long
 
-const int MAXN = 100005;
-vector<int> adj[MAXN];
-int val[MAXN];
-int sub_and[MAXN];
-int total_and;
+const int FULL_MASK = (1LL << 31) - 1; // all bits 1 for 31 bits (values ≤ 2^31 - 1)
 
-void dfs(int u, int p) {
-    sub_and[u] = val[u];
+int n;
+vector<int> val;
+vector<vector<int>> adj;
+vector<int> sub, up;
+long long ans;
+
+void dfs1(int u, int p) {
+    sub[u] = val[u];
     for (int v : adj[u]) {
         if (v == p) continue;
-        dfs(v, u);
-        sub_and[u] &= sub_and[v];
+        dfs1(v, u);
+        sub[u] &= sub[v];
     }
 }
 
-int32_t main() {
-    ios::sync_with_stdio(false);
-    cin.tie(nullptr);
+void dfs2(int u, int p) {
+    int m = adj[u].size();
+    vector<int> prefix(m, FULL_MASK), suffix(m, FULL_MASK);
 
+    // prefix AND
+    for (int i = 0; i < m; i++) {
+        int v = adj[u][i];
+        if (v == p) prefix[i] = (i == 0 ? FULL_MASK : prefix[i - 1]);
+        else prefix[i] = (i == 0 ? sub[v] : (prefix[i - 1] & sub[v]));
+    }
+
+    // suffix AND
+    for (int i = m - 1; i >= 0; i--) {
+        int v = adj[u][i];
+        if (v == p) suffix[i] = (i == m - 1 ? FULL_MASK : suffix[i + 1]);
+        else suffix[i] = (i == m - 1 ? sub[v] : (suffix[i + 1] & sub[v]));
+    }
+
+    for (int i = 0; i < m; i++) {
+        int v = adj[u][i];
+        if (v == p) continue;
+
+        int left = (i > 0 ? prefix[i - 1] : FULL_MASK);
+        int right = (i < m - 1 ? suffix[i + 1] : FULL_MASK);
+        int siblings_and = left & right;
+
+        up[v] = val[u];
+        if (p != -1) up[v] &= up[u];
+        up[v] &= siblings_and;
+
+        dfs2(v, u);
+    }
+}
+
+void solve() {
     int T;
     cin >> T;
     while (T--) {
-        int n;
         cin >> n;
-        for (int i = 0; i < n; i++) cin >> val[i];
-        for (int i = 0; i < n; i++) adj[i].clear();
+        val.assign(n, 0);
+        adj.assign(n, {});
+        sub.assign(n, 0);
+        up.assign(n, FULL_MASK);
+        ans = 0;
+
+        for (int i = 0; i < n; i++)
+            cin >> val[i];
 
         for (int i = 0; i < n - 1; i++) {
             int u, v;
@@ -157,20 +197,21 @@ int32_t main() {
             adj[v].push_back(u);
         }
 
-        // 1️⃣ Compute total AND
-        total_and = val[0];
-        for (int i = 1; i < n; i++) total_and &= val[i];
+        dfs1(0, -1);
+        up[0] = FULL_MASK;
+        dfs2(0, -1);
 
-        // 2️⃣ Compute subtree AND
-        dfs(0, -1);
-
-        // 3️⃣ Count edges that satisfy condition
-        int ans = 0;
-        for (int i = 1; i < n; i++) { // all nodes except root
-            if (sub_and[i] == total_and)
-                ans++;
+        for (int v = 1; v < n; v++) {
+            if (sub[v] == up[v]) ans++;
         }
 
         cout << ans << "\n";
     }
+}
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+    solve();
+    return 0;
 }
