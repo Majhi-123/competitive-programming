@@ -161,85 +161,99 @@
 #include <bits/stdc++.h>
 using namespace std;
 
-bool sort1(pair<int,int> &a, pair<int,int> &b){
-    if (a.first == b.first) return a.second < b.second;
-    return a.first < b.first;
+struct SegTree {
+    int n;
+    vector<int> st;
+    SegTree(int _n=0){init(_n);}
+    void init(int _n){
+        n = 1;
+        while(n < _n) n <<= 1;
+        st.assign(2*n, -1);
+    }
+    void build(const vector<int>& a){
+        int m = (int)a.size();
+        init(m);
+        for(int i=0;i<m;i++) st[n+i] = a[i];
+        for(int i=n-1;i>0;i--) st[i] = max(st[2*i], st[2*i+1]);
+    }
+    // query max on [l, r] inclusive (0-indexed)
+    int query(int l, int r){
+        if(l>r) return -1;
+        l += n; r += n;
+        int res = -1;
+        while(l<=r){
+            if(l&1) res = max(res, st[l++]);
+            if(!(r&1)) res = max(res, st[r--]);
+            l >>= 1; r >>= 1;
+        }
+        return res;
+    }
+};
+
+int bestPairWithBudget(vector<pair<int,int>>& v, int budget){
+    // v: (cost, beauty), sorted by cost ascending
+    int n = (int)v.size();
+    if(n < 2) return -1;
+    vector<int> beauty(n);
+    for(int i=0;i<n;i++) beauty[i] = v[i].second;
+    SegTree seg;
+    seg.build(beauty);
+
+    int best = -1;
+    for(int i=0;i<n;i++){
+        int cost = v[i].first;
+        int b = v[i].second;
+        int rem = budget - cost;
+        if(rem < 0) continue;
+        // find last index with cost <= rem
+        auto it = upper_bound(v.begin(), v.end(), make_pair(rem, INT_MAX));
+        int idx = int(it - v.begin()) - 1;
+        if(idx < 0) continue;
+        // we need max beauty in [0..idx] excluding index i
+        int cand = -1;
+        if(i-1 >= 0) cand = max(cand, seg.query(0, min(idx, i-1)));
+        if(i+1 <= idx) cand = max(cand, seg.query(i+1, idx));
+        if(cand != -1) best = max(best, b + cand);
+    }
+    return best;
 }
 
-int main() {
+int main(){
     ios::sync_with_stdio(false);
     cin.tie(nullptr);
-
     int T;
-    cin >> T;
-    while (T--) {
-        int n, c, d;
-        cin >> n >> c >> d;
-
-        vector<pair<int,int>> c1, c2, d1, d2;
-
-        for (int i = 0; i < n; i++) {
-            int b, p;
-            char t;
+    if(!(cin>>T)) return 0;
+    while(T--){
+        int n, C, D;
+        cin >> n >> C >> D;
+        vector<pair<int,int>> coins, diamonds; // (cost, beauty)
+        for(int i=0;i<n;i++){
+            int b, p; char t;
             cin >> b >> p >> t;
-            if (t == 'C') {
-                c1.push_back({b, p});  // beauty, cost
-                c2.push_back({p, b});  // cost, beauty
-            } else {
-                d1.push_back({b, p});
-                d2.push_back({p, b});
-            }
+            if(t == 'C') coins.push_back({p, b});
+            else diamonds.push_back({p, b});
         }
 
-        sort(c1.begin(), c1.end(), sort1);
-        sort(c2.begin(), c2.end(), sort1);
-        sort(d1.begin(), d1.end(), sort1);
-        sort(d2.begin(), d2.end(), sort1);
+        sort(coins.begin(), coins.end());     // by cost then beauty
+        sort(diamonds.begin(), diamonds.end());
 
-        // prefix max of beauty (for cost-ascending vectors)
-        for (int i = 1; i < (int)c2.size(); i++)
-            c2[i].second = max(c2[i].second, c2[i-1].second);
-        for (int i = 1; i < (int)d2.size(); i++)
-            d2[i].second = max(d2[i].second, d2[i-1].second);
+        int bestCoinPair = bestPairWithBudget(coins, C);
+        int bestDiamondPair = bestPairWithBudget(diamonds, D);
 
-        // best single coin/diamond fountain
-        int maxCoinBeauty = -1, maxDiamondBeauty = -1;
-        for (auto &x : c2) if (x.first <= c) maxCoinBeauty = max(maxCoinBeauty, x.second);
-        for (auto &x : d2) if (x.first <= d) maxDiamondBeauty = max(maxDiamondBeauty, x.second);
+        int bestCoinSingle = -1, bestDiamondSingle = -1;
+        for(auto &pr: coins) if(pr.first <= C) bestCoinSingle = max(bestCoinSingle, pr.second);
+        for(auto &pr: diamonds) if(pr.first <= D) bestDiamondSingle = max(bestDiamondSingle, pr.second);
 
-        // best pair of same type
-        int bestCoinPair = -1, bestDiamondPair = -1;
+        int bestMix = -1;
+        if(bestCoinSingle != -1 && bestDiamondSingle != -1) bestMix = bestCoinSingle + bestDiamondSingle;
 
-        for (auto &f : c1) {
-            int beauty = f.first, cost = f.second;
-            int rem = c - cost;
-            if (rem < 0) continue;
-            auto it = upper_bound(c2.begin(), c2.end(), make_pair(rem, INT_MAX));
-            if (it != c2.begin()) {
-                --it;
-                if (it->first != cost) // avoid same fountain
-                    bestCoinPair = max(bestCoinPair, beauty + it->second);
-            }
-        }
+        int ans = 0;
+        if(bestCoinPair != -1) ans = max(ans, bestCoinPair);
+        if(bestDiamondPair != -1) ans = max(ans, bestDiamondPair);
+        if(bestMix != -1) ans = max(ans, bestMix);
 
-        for (auto &f : d1) {
-            int beauty = f.first, cost = f.second;
-            int rem = d - cost;
-            if (rem < 0) continue;
-            auto it = upper_bound(d2.begin(), d2.end(), make_pair(rem, INT_MAX));
-            if (it != d2.begin()) {
-                --it;
-                if (it->first != cost)
-                    bestDiamondPair = max(bestDiamondPair, beauty + it->second);
-            }
-        }
-
-        // best mixed (coin + diamond)
-        int bestMix = 0;
-        if (maxCoinBeauty != -1 && maxDiamondBeauty != -1)
-            bestMix = maxCoinBeauty + maxDiamondBeauty;
-
-        cout << max({0, bestCoinPair, bestDiamondPair, bestMix}) << "\n";
+        cout << ans << '\n';
     }
     return 0;
 }
+
