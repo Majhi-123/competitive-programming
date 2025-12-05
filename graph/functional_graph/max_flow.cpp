@@ -27,12 +27,12 @@ class Dinic{
         }
         
         void addEdge(int u,int v, long long int cap){
-            adj[u].push_back({v,cap,adj[v].size()});
-            adj[v].push_back({u,0,adj[u].size()-1});
+            adj[u].push_back({v,cap,adj[v].size()});         //last is storing at whih pos u is in v 
+            adj[v].push_back({u,0,adj[u].size()-1});         //last is storing at which position v in u      
         }
         
         bool  bfs(int source,int sink){
-            fill(level.begin(),level.end(),-1);
+            fill(level.begin(),level.end(),-1);             //setting each node -1 level
             
             queue<int> q;
             q.push(source);
@@ -40,17 +40,17 @@ class Dinic{
             
             while(!q.empty()){
                 int node = q.front();
-                q.pop();
+                q.pop();                                  
                 
                 for(auto it: adj[node]){
                     if(level[it.to]==-1 && it.capacity>0){
-                        level[it.to] = level[node] +1;
+                        level[it.to] = level[node] +1;               //marking each node node which level they are
                         q.push(it.to);
                     }
                 }
             }
             
-            return level[sink] != -1;
+            return level[sink] != -1;                                  //if sink not reachable from source
         }
         
         long long dfs(int node,long long int pushed, int sink){
@@ -65,21 +65,21 @@ class Dinic{
             for(int i=ptr[node];i<adj[node].size();i++){
                 
                 int next = adj[node][i].to;
-                long long int cap = adj[node][i].capacity;
+                long long int cap = adj[node][i].capacity;          
                 
                 if(level[next] == level[node]+1 && cap>0){
-                    long long int flow = dfs(next,min(pushed,cap),sink);
+                    long long int flow = dfs(next,min(pushed,cap),sink);                   //traversing each adjacent node and finding what is minimum flow we can take in a path
                     
                     if(flow >0){
                         
-                        adj[node][i].capacity -= flow;
+                        adj[node][i].capacity -= flow;                                     //after getting flow updating capacity of u and v
                         adj[next][adj[node][i].rev].capacity += flow;
                         
                         return flow;
                     }
                 }
                 
-                ptr[node] = i+1;
+                ptr[node] = i+1;                                                         //from 0 to i for the node we didnt got any answer so better start with i+1, when we next encounter this node
             }
             
             return 0;
@@ -90,13 +90,13 @@ class Dinic{
             
             long long flow =0;
             
-            while(bfs(source,sink)){
+            while(bfs(source,sink)){                                                    //doing bfs till sink is reachable 
                 fill(ptr.begin(),ptr.end(),0);
                 
                 long long pushed = dfs(source,LLONG_MAX,sink);
                 while(pushed>0){
                     
-                    flow += pushed;
+                    flow += pushed;                                                     //adding the pushed each time we got for dfs
                     pushed = dfs(source,INT_MAX,sink);
                 }
             }
