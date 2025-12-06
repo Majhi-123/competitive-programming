@@ -1,0 +1,36 @@
+Problem: Given two strings - a pattern  |s|  and a text  |t| , determine if the pattern appears in the text and if it does, enumerate all its occurrences in  O(|s| + |t|)  time.
+
+Algorithm: Calculate the hash for the pattern  |s| . Calculate hash values for all the prefixes of the text  |t|. Now, we can compare a substring of length  |s|  with  |s| in constant time using the calculated hashes. So, compare each substring of length  |s|  with the pattern. This will take a total of  O(|t|)  time. Hence the final complexity of the algorithm is  O(|t| + |s|) :  O(|s|)  is required for calculating the hash of the pattern and  O(|t|)  for comparing each substring of length  |s|  with the pattern.
+
+  
+vector<int> rabin_karp(string const& s, string const& t) {
+    const int p = 31; 
+    const int m = 1e9 + 9;
+    int S = s.size(), T = t.size();
+
+    vector<long long> p_pow(max(S, T)); 
+    p_pow[0] = 1; 
+    for (int i = 1; i < (int)p_pow.size(); i++) 
+        p_pow[i] = (p_pow[i-1] * p) % m;                //precomputation of power of p
+
+    vector<long long> h(T + 1, 0); 
+    for (int i = 0; i < T; i++)
+     // h[0] = 0
+    // h[1] = t[0] * p^0
+    // h[2] = t[0]*p^0 + t[1]*p^1
+    // ...
+    // h[k] = hash of t[0..k-1]
+        h[i+1] = (h[i] + (t[i] - 'a' + 1) * p_pow[i]) % m;    
+  
+    long long h_s = 0; 
+    for (int i = 0; i < S; i++) 
+       //  h_s=s[0]⋅p^0+s[1]⋅p^1+...+s[S−1]⋅p^S−1
+        h_s = (h_s + (s[i] - 'a' + 1) * p_pow[i]) % m; 
+    vector<int> occurrences;
+    for (int i = 0; i + S - 1 < T; i++) {
+        long long cur_h = (h[i+S] + m - h[i]) % m;
+        if (cur_h == h_s * p_pow[i] % m)    //normalization due to offset of p^i
+            occurrences.push_back(i);
+    }
+    return occurrences;
+}
