@@ -6,14 +6,14 @@ vector<int> z_function(const string &s) {
 
     for (int i = 1; i < n; i++) {
         if (i <= R) {
-            z[i] = min(R - i + 1, z[i - L]);
+            z[i] = min(R - i + 1, z[i - L]);         //storing max length up to which we can proceed <=r
         }
 
-        while (i + z[i] < n && s[z[i]] == s[i + z[i]]) {
+        while (i + z[i] < n && s[z[i]] == s[i + z[i]]) {          //but we can still proceed after r if matches are valid  
             z[i]++;
         }
 
-        if (i + z[i] - 1 > R) {
+        if (i + z[i] - 1 > R){          //finally i to i +z[i] will be we our new range  ---
             L = i;
             R = i + z[i] - 1;
         }
