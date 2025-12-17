@@ -1,4 +1,5 @@
 //finding longest proper prefix which which also a suffix.
+//O(n) algorithm cause j is increaing along side i, max decrease can be also n
 vector<int> lps(n, 0);
 
 int j = 0; // length of previous longest prefix-suffix
