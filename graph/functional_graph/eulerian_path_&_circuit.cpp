@@ -6,6 +6,38 @@
 
 //in euler circuit we can start at any node
 //hierholzer for directed graph handles both, euler tour and circuit
+stack<int> st;
+vector<int> res;
+st.push(start);
+
+while(!st.empty()){
+
+    int node = st.top();
+
+    // Remove already-used edges
+    while(!adj[node].empty() && used[adj[node].back().second]){
+        adj[node].pop_back();
+    }
+
+    if(!adj[node].empty()){   // we can go further
+        auto [to, id] = adj[node].back();
+        adj[node].pop_back();
+
+        used[id] = true;      // mark edge as used
+        st.push(to);
+    }
+    else{   // dead end → add to result
+        st.pop();
+        res.push_back(node);
+    }
+}
+
+reverse(res.begin(), res.end());
+
+
+//for directed graph--
+//Euler path- 1 node has (in_deg-out_deg) == 1 && (out_deg-in_deg)==1 , rest have in_deg == out_deg
+//Euler tour - each node has in_deg == out_deg
 class Solution {
 public:
     vector<vector<int>> validArrangement(vector<vector<int>>& pairs) {
@@ -65,6 +97,3 @@ public:
         return final;
     }
 };
-//for directed graph--
-//Euler path- 1 node has (in_deg-out_deg) == 1 && (out_deg-in_deg)==1 , rest have in_deg == out_deg
-//Euler tour - each node has in_deg == out_deg
