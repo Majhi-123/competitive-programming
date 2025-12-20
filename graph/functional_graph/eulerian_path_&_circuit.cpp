@@ -6,6 +6,7 @@
 
 //in euler circuit we can start at any node
 //hierholzer for directed graph handles both, euler tour and circuit
+//for undirected graph we can push edges using id,cause we are pushing both sides
 stack<int> st;
 vector<int> res;
 st.push(start);
@@ -15,18 +16,18 @@ while(!st.empty()){
     int node = st.top();
 
     // Remove already-used edges
-    while(!adj[node].empty() && used[adj[node].back().second]){
+    while(!adj[node].empty() && used[adj[node].back().second]){      //removing the back edges from the graph which are visted
         adj[node].pop_back();
     }
 
-    if(!adj[node].empty()){   // we can go further
+    if(!adj[node].empty()){   // we can go further                   //if not empty, push the last edge, and pop it from from node, mark it used
         auto [to, id] = adj[node].back();
         adj[node].pop_back();
 
         used[id] = true;      // mark edge as used
         st.push(to);
     }
-    else{   // dead end → add to result
+    else{   // dead end → add to result                             //if can't pop , push yourself to result and pop from stack
         st.pop();
         res.push_back(node);
     }
